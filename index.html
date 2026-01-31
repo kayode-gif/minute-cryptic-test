@@ -192,6 +192,12 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+      20%, 40%, 60%, 80% { transform: translateX(8px); }
+    }
+
     .hint-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -325,6 +331,18 @@
       background: rgba(184, 212, 227, 0.3);
       border-color: var(--baby-blue);
       color: var(--wine);
+    }
+
+    .letter-box.correct {
+      background: rgba(144, 238, 144, 0.3);
+      border-color: #5cb85c;
+      color: #2d5016;
+    }
+
+    .letter-box.incorrect {
+      background: rgba(255, 107, 107, 0.2);
+      border-color: #d9534f;
+      animation: shake 0.5s;
     }
 
     .action-buttons {
@@ -475,7 +493,7 @@
       </div>
       <div class="action-buttons">
         <button type="button" class="use-letter-btn" id="useLetterBtn">Use a letter</button>
-        <button type="button" class="reveal-btn" id="revealBtn">Reveal answer</button>
+        <button type="button" class="reveal-btn" id="checkBtn">Check</button>
       </div>
     </div>
 
@@ -524,7 +542,7 @@
       const hintFodderBtn = document.getElementById('hintFodderBtn');
       const letterBoxes = document.querySelectorAll('.letter-box');
       const useLetterBtn = document.getElementById('useLetterBtn');
-      const revealBtn = document.getElementById('revealBtn');
+      const checkBtn = document.getElementById('checkBtn');
       const revealSection = document.getElementById('revealSection');
       const hintsCountMsg = document.getElementById('hintsCountMsg');
       const shareBtn = document.getElementById('shareBtn');
@@ -603,10 +621,10 @@
           if (val && /[A-Z]/.test(val)) {
             box.value = val;
             box.classList.add('filled');
+            box.classList.remove('incorrect');
             if (index < letterBoxes.length - 1) {
               letterBoxes[index + 1].focus();
             }
-            checkAnswer();
           }
         });
 
@@ -646,35 +664,40 @@
               letterBoxes[nextEmpty].focus();
             }
           }
-          checkAnswer();
         }
       });
 
-      function checkAnswer() {
+      checkBtn.addEventListener('click', () => {
         const userAnswer = Array.from(letterBoxes).map(b => b.value).join('').toUpperCase();
+        
         if (userAnswer === ANSWER) {
+          // Correct answer
+          letterBoxes.forEach(box => {
+            box.classList.add('correct');
+            box.classList.remove('incorrect');
+          });
           showReveal();
+        } else {
+          // Wrong answer - shake and turn red
+          letterBoxes.forEach(box => {
+            box.classList.add('incorrect');
+            box.classList.remove('correct');
+          });
+          
+          // Remove incorrect class after animation
+          setTimeout(() => {
+            letterBoxes.forEach(box => {
+              box.classList.remove('incorrect');
+            });
+          }, 500);
         }
-      }
+      });
 
       function showReveal() {
         revealSection.classList.add('visible');
         solveSection.classList.remove('visible');
-        if (usedReveal) {
-          hintsCountMsg.textContent = "You revealed the answer.";
-        } else {
-          hintsCountMsg.textContent = 'You used ' + hintsUsed + ' hint' + (hintsUsed === 1 ? '' : 's') + '.';
-        }
+        hintsCountMsg.textContent = 'You used ' + hintsUsed + ' hint' + (hintsUsed === 1 ? '' : 's') + '.';
       }
-
-      revealBtn.addEventListener('click', () => {
-        usedReveal = true;
-        letterBoxes.forEach((box, idx) => {
-          box.value = ANSWER[idx];
-          box.classList.add('revealed');
-        });
-        showReveal();
-      });
 
       shareBtn.addEventListener('click', () => {
         const shareText = `Minute Cryptic - \n"Admirer's vile ant confused, heads of north east" (9)\n🏋 ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'}`;
