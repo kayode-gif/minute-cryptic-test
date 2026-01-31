@@ -225,8 +225,66 @@
       cursor: default;
     }
 
-    .hint-type-btn[data-hovered="true"] {
-      opacity: 0.7;
+    /* Popup */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(74, 44, 50, 0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .popup-overlay.visible {
+      display: flex;
+    }
+
+    .popup {
+      background: white;
+      border-radius: 16px;
+      padding: 1.75rem 1.5rem;
+      max-width: 360px;
+      width: 100%;
+      border: 1px solid var(--rose);
+      box-shadow: 0 12px 40px rgba(74, 44, 50, 0.15);
+      animation: fadeIn 0.25s ease;
+    }
+
+    .popup h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--wine);
+      margin-bottom: 0.75rem;
+      text-transform: capitalize;
+    }
+
+    .popup p {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .popup-close {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: white;
+      background: var(--wine);
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1.25rem;
+      cursor: pointer;
+      margin-top: 1.25rem;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    .popup-close:hover {
+      background: #6e2f3b;
     }
 
     .letter-boxes {
@@ -398,11 +456,11 @@
     </div>
 
     <div class="solve-section" id="solveSection">
-      <p style="font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.75rem;">Hover over hints to see clues</p>
+      <p style="font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.75rem;">Click a hint button to see clues</p>
       <div class="hint-buttons">
-        <button type="button" class="hint-type-btn" id="hintDefBtn" title="We're looking for another word for admirer — that's what this clue is asking for.">Definition</button>
-        <button type="button" class="hint-type-btn" id="hintIndBtn" title="'Confused' is an anagram indicator — the letters get jumbled. 'Heads' is a selection indicator — take the first letter of each word.">Indicators</button>
-        <button type="button" class="hint-type-btn" id="hintFodderBtn" title="Our fodder is vile, ant, and north east. Anagram vile + ant, then add the first letters of north and east.">Fodder</button>
+        <button type="button" class="hint-type-btn" id="hintDefBtn">Definition</button>
+        <button type="button" class="hint-type-btn" id="hintIndBtn">Indicators</button>
+        <button type="button" class="hint-type-btn" id="hintFodderBtn">Fodder</button>
       </div>
       <div class="letter-boxes" id="letterBoxes">
         <input type="text" class="letter-box" maxlength="1" data-index="0" autocomplete="off" spellcheck="false">
@@ -429,6 +487,15 @@
       <p class="share-toast" id="shareToast">Link copied! Send it to them.</p>
     </div>
   </main>
+
+  <!-- Popup -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup">
+      <h3 id="popupTitle">Hint</h3>
+      <p id="popupBody"></p>
+      <button type="button" class="popup-close" id="popupClose">Got it</button>
+    </div>
+  </div>
 
   <footer id="mainFooter"></footer>
 
@@ -462,64 +529,62 @@
       const hintsCountMsg = document.getElementById('hintsCountMsg');
       const shareBtn = document.getElementById('shareBtn');
       const shareToast = document.getElementById('shareToast');
+      const popupOverlay = document.getElementById('popupOverlay');
+      const popupTitle = document.getElementById('popupTitle');
+      const popupBody = document.getElementById('popupBody');
+      const popupClose = document.getElementById('popupClose');
 
       let hintsUsed = 0;
       let usedReveal = false;
       const revealedIndices = new Set();
-      const hintUsed = { def: false, ind: false, fodder: false };
 
       const hintConfig = {
         definition: {
-          selector: '[data-part="definition"]',
-          highlightClass: 'highlight-def',
+          title: 'Definition',
+          body: "We're looking for another word for <em>admirer</em> — that's what this clue is asking for."
         },
         indicators: {
-          selector: '[data-part="indicator"]',
-          highlightClass: 'highlight-ind',
+          title: 'Indicators',
+          body: '"Confused" is an <strong>anagram indicator</strong> — the letters get jumbled. "Heads" is a <strong>selection indicator</strong> — take the first letter of each word.'
         },
         fodder: {
-          selector: '[data-part="fodder"]',
-          highlightClass: 'highlight-fodder',
+          title: 'Fodder',
+          body: "Our fodder is <em>vile</em>, <em>ant</em>, and <em>north east</em>. Anagram vile + ant, then add the first letters of north and east."
         }
       };
 
-      function clearHighlights() {
-        clueText.querySelectorAll('.clue-part').forEach(el => {
-          el.classList.remove('highlight-def', 'highlight-ind', 'highlight-fodder');
-        });
-      }
-
-      function highlightPart(type) {
+      function showPopup(type) {
         const config = hintConfig[type];
         if (!config) return;
-        clearHighlights();
-        clueText.querySelectorAll(config.selector).forEach(el => {
-          el.classList.add(config.highlightClass);
-        });
+        popupTitle.textContent = config.title;
+        popupBody.innerHTML = config.body;
+        popupOverlay.classList.add('visible');
+        hintsUsed++;
       }
 
-      function handleHintHover(btn, type, hintKey) {
-        let hoverTimeout;
-        btn.addEventListener('mouseenter', () => {
-          btn.setAttribute('data-hovered', 'true');
-          hoverTimeout = setTimeout(() => {
-            if (!hintUsed[hintKey]) {
-              hintsUsed++;
-              hintUsed[hintKey] = true;
-            }
-            highlightPart(type);
-          }, 500);
-        });
-        btn.addEventListener('mouseleave', () => {
-          clearTimeout(hoverTimeout);
-          btn.removeAttribute('data-hovered');
-          clearHighlights();
-        });
+      function closePopup() {
+        popupOverlay.classList.remove('visible');
       }
 
-      handleHintHover(hintDefBtn, 'definition', 'def');
-      handleHintHover(hintIndBtn, 'indicators', 'ind');
-      handleHintHover(hintFodderBtn, 'fodder', 'fodder');
+      hintDefBtn.addEventListener('click', () => {
+        showPopup('definition');
+        hintDefBtn.disabled = true;
+      });
+
+      hintIndBtn.addEventListener('click', () => {
+        showPopup('indicators');
+        hintIndBtn.disabled = true;
+      });
+
+      hintFodderBtn.addEventListener('click', () => {
+        showPopup('fodder');
+        hintFodderBtn.disabled = true;
+      });
+
+      popupClose.addEventListener('click', closePopup);
+      popupOverlay.addEventListener('click', (e) => {
+        if (e.target === popupOverlay) closePopup();
+      });
 
       playBtn.addEventListener('click', () => {
         solveSection.classList.add('visible');
