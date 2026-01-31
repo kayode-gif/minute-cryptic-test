@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A clue for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #fdf8f6;
+      --blush: #f5dde2;
+      --rose: #e8b4bc;
+      --rose-deep: #c97b89;
+      --wine: #8b3a4a;
+      --text: #4a2c32;
+      --text-soft: #6b4450;
+      --baby-blue: #b8d4e3;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.5rem;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(245, 221, 226, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(232, 180, 188, 0.2) 0%, transparent 50%);
+    }
+
+    .result-view {
+      display: none;
+      text-align: center;
+      max-width: 420px;
+    }
+
+    .result-view.visible {
+      display: block;
+    }
+
+    .result-view .proposal {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.75rem;
+      font-style: italic;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-view .hints-used {
+      font-size: 0.95rem;
+      color: var(--text-soft);
+      margin-bottom: 2rem;
+    }
+
+    header {
+      margin-bottom: 3rem;
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--wine);
+    }
+
+    main {
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+
+    main.hidden {
+      display: none;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 2rem;
+      letter-spacing: 0.02em;
+    }
+
+    .clue-box {
+      background: rgba(255, 255, 255, 0.85);
+      border: 4px solid var(--baby-blue);
+      border-radius: 12px;
+      padding: 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 24px rgba(139, 58, 74, 0.06), 0 0 0 10px rgba(184, 212, 227, 0.45);
+    }
+
+    .clue-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.25rem, 3vw, 1.5rem);
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.7;
+      letter-spacing: 0.01em;
+    }
+
+    .clue-byline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      font-style: normal;
+      color: var(--text-soft);
+      margin-top: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    .clue-part {
+      transition: background 0.25s, color 0.2s;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    .clue-part.highlight-def {
+      background: rgba(139, 58, 74, 0.15);
+      color: var(--wine);
+    }
+
+    .clue-part.highlight-ind {
+      background: rgba(201, 123, 137, 0.25);
+      color: var(--wine);
+    }
+
+    .clue-part.highlight-fodder {
+      background: rgba(232, 180, 188, 0.4);
+      color: var(--text);
+    }
+
+    .play-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: white;
+      background: var(--wine);
+      border: none;
+      border-radius: 999px;
+      padding: 1rem 2rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    .play-btn:hover {
+      background: #6e2f3b;
+      transform: scale(1.02);
+    }
+
+    .play-btn:active {
+      transform: scale(0.98);
+    }
+
+    .play-btn:disabled {
+      opacity: 0.7;
+      cursor: default;
+      transform: none;
+    }
+
+    .solve-section {
+      display: none;
+      margin-top: 2rem;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .solve-section.visible {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hint-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .hint-type-btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--wine);
+      background: rgba(232, 180, 188, 0.35);
+      border: 1px solid var(--rose);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      position: relative;
+    }
+
+    .hint-type-btn:hover:not(:disabled) {
+      background: rgba(232, 180, 188, 0.55);
+      border-color: var(--rose-deep);
+    }
+
+    .hint-type-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .hint-type-btn[data-hovered="true"] {
+      opacity: 0.7;
+    }
+
+    .letter-boxes {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .letter-box {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      width: 45px;
+      height: 55px;
+      text-align: center;
+      text-transform: uppercase;
+      border: 2px solid var(--rose);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .letter-box:focus {
+      outline: none;
+      border-color: var(--rose-deep);
+      box-shadow: 0 0 0 3px rgba(201, 123, 137, 0.15);
+    }
+
+    .letter-box.filled {
+      background: rgba(232, 180, 188, 0.2);
+      border-color: var(--rose-deep);
+    }
+
+    .letter-box.revealed {
+      background: rgba(184, 212, 227, 0.3);
+      border-color: var(--baby-blue);
+      color: var(--wine);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .use-letter-btn, .reveal-btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--wine);
+      background: white;
+      border: 1px solid var(--rose);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .use-letter-btn:hover, .reveal-btn:hover {
+      background: var(--blush);
+      border-color: var(--rose-deep);
+    }
+
+    .reveal-section {
+      display: none;
+      margin-top: 2.5rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(232, 180, 188, 0.25) 0%, rgba(245, 221, 226, 0.4) 100%);
+      border-radius: 16px;
+      border: 1px solid var(--rose);
+      animation: fadeIn 0.6s ease;
+    }
+
+    .reveal-section.visible {
+      display: block;
+    }
+
+    .answer-display {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--wine);
+      margin-bottom: 0.75rem;
+    }
+
+    .proposal {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 0.5rem;
+    }
+
+    .hints-count-msg {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin-bottom: 1.5rem;
+    }
+
+    .share-btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--wine);
+      background: white;
+      border: 1px solid var(--rose);
+      border-radius: 999px;
+      padding: 0.65rem 1.25rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .share-btn:hover {
+      background: var(--blush);
+      color: var(--wine);
+    }
+
+    .share-toast {
+      font-size: 0.85rem;
+      color: var(--rose-deep);
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .share-toast.visible {
+      display: block;
+    }
+
+    footer {
+      margin-top: auto;
+      padding-top: 3rem;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <!-- View when she sends you the link (?solved=1&hints=N) -->
+  <div class="result-view" id="resultView">
+    <header>
+      <div class="logo">A clue for you</div>
+    </header>
+    <div class="result-view">
+      <p class="proposal">She said yes!</p>
+      <p class="hints-used" id="resultHintsMsg">She solved it with <span id="resultHintsNum">0</span> hints.</p>
+    </div>
+    <footer>Made with &hearts; for you</footer>
+  </div>
+
+  <!-- Puzzle view -->
+  <main id="puzzleMain">
+    <header>
+      <div class="logo">A clue for you</div>
+    </header>
+
+    <h1>Today's clue</h1>
+
+    <div class="clue-box">
+      <p class="clue-text" id="clueText"><span class="clue-part" data-part="definition">Admirer's</span> <span class="clue-part" data-part="fodder">vile</span> <span class="clue-part" data-part="fodder">ant</span> <span class="clue-part" data-part="indicator">confused</span>, <span class="clue-part" data-part="indicator">heads</span> of <span class="clue-part" data-part="fodder">north east</span> (9)</p>
+      <button type="button" class="play-btn" id="playBtn">Play</button>
+      <p class="clue-byline">By Kayode Oke</p>
+    </div>
+
+    <div class="solve-section" id="solveSection">
+      <p style="font-size: 0.85rem; color: var(--text-soft); margin-bottom: 0.75rem;">Hover over hints to see clues</p>
+      <div class="hint-buttons">
+        <button type="button" class="hint-type-btn" id="hintDefBtn" title="We're looking for another word for admirer — that's what this clue is asking for.">Definition</button>
+        <button type="button" class="hint-type-btn" id="hintIndBtn" title="'Confused' is an anagram indicator — the letters get jumbled. 'Heads' is a selection indicator — take the first letter of each word.">Indicators</button>
+        <button type="button" class="hint-type-btn" id="hintFodderBtn" title="Our fodder is vile, ant, and north east. Anagram vile + ant, then add the first letters of north and east.">Fodder</button>
+      </div>
+      <div class="letter-boxes" id="letterBoxes">
+        <input type="text" class="letter-box" maxlength="1" data-index="0" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="1" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="2" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="3" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="4" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="5" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="6" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="7" autocomplete="off" spellcheck="false">
+        <input type="text" class="letter-box" maxlength="1" data-index="8" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="action-buttons">
+        <button type="button" class="use-letter-btn" id="useLetterBtn">Use a letter</button>
+        <button type="button" class="reveal-btn" id="revealBtn">Reveal answer</button>
+      </div>
+    </div>
+
+    <div class="reveal-section" id="revealSection">
+      <div class="answer-display">VALENTINE</div>
+      <p class="proposal">Will you be my Valentine?</p>
+      <p class="hints-count-msg" id="hintsCountMsg">You used 0 hints.</p>
+      <button type="button" class="share-btn" id="shareBtn">Send link back to your valentine</button>
+      <p class="share-toast" id="shareToast">Link copied! Send it to them.</p>
+    </div>
+  </main>
+
+  <footer id="mainFooter"></footer>
+
+  <script>
+    const ANSWER = 'VALENTINE';
+    const params = new URLSearchParams(window.location.search);
+    const solved = params.get('solved') === '1';
+    const hintsParam = parseInt(params.get('hints'), 10) || 0;
+
+    if (solved && !isNaN(hintsParam)) {
+      document.getElementById('resultView').classList.add('visible');
+      document.getElementById('puzzleMain').classList.add('hidden');
+      document.getElementById('mainFooter').style.display = 'none';
+      document.getElementById('resultHintsNum').textContent = hintsParam;
+      document.getElementById('resultHintsMsg').textContent = 'She solved it with ' + hintsParam + ' hint' + (hintsParam === 1 ? '' : 's') + '.';
+    }
+
+    function initPuzzle() {
+      const playBtn = document.getElementById('playBtn');
+      const solveSection = document.getElementById('solveSection');
+      if (!playBtn || !solveSection) return;
+      
+      const clueText = document.getElementById('clueText');
+      const hintDefBtn = document.getElementById('hintDefBtn');
+      const hintIndBtn = document.getElementById('hintIndBtn');
+      const hintFodderBtn = document.getElementById('hintFodderBtn');
+      const letterBoxes = document.querySelectorAll('.letter-box');
+      const useLetterBtn = document.getElementById('useLetterBtn');
+      const revealBtn = document.getElementById('revealBtn');
+      const revealSection = document.getElementById('revealSection');
+      const hintsCountMsg = document.getElementById('hintsCountMsg');
+      const shareBtn = document.getElementById('shareBtn');
+      const shareToast = document.getElementById('shareToast');
+
+      let hintsUsed = 0;
+      let usedReveal = false;
+      const revealedIndices = new Set();
+      const hintUsed = { def: false, ind: false, fodder: false };
+
+      const hintConfig = {
+        definition: {
+          selector: '[data-part="definition"]',
+          highlightClass: 'highlight-def',
+        },
+        indicators: {
+          selector: '[data-part="indicator"]',
+          highlightClass: 'highlight-ind',
+        },
+        fodder: {
+          selector: '[data-part="fodder"]',
+          highlightClass: 'highlight-fodder',
+        }
+      };
+
+      function clearHighlights() {
+        clueText.querySelectorAll('.clue-part').forEach(el => {
+          el.classList.remove('highlight-def', 'highlight-ind', 'highlight-fodder');
+        });
+      }
+
+      function highlightPart(type) {
+        const config = hintConfig[type];
+        if (!config) return;
+        clearHighlights();
+        clueText.querySelectorAll(config.selector).forEach(el => {
+          el.classList.add(config.highlightClass);
+        });
+      }
+
+      function handleHintHover(btn, type, hintKey) {
+        let hoverTimeout;
+        btn.addEventListener('mouseenter', () => {
+          btn.setAttribute('data-hovered', 'true');
+          hoverTimeout = setTimeout(() => {
+            if (!hintUsed[hintKey]) {
+              hintsUsed++;
+              hintUsed[hintKey] = true;
+            }
+            highlightPart(type);
+          }, 500);
+        });
+        btn.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimeout);
+          btn.removeAttribute('data-hovered');
+          clearHighlights();
+        });
+      }
+
+      handleHintHover(hintDefBtn, 'definition', 'def');
+      handleHintHover(hintIndBtn, 'indicators', 'ind');
+      handleHintHover(hintFodderBtn, 'fodder', 'fodder');
+
+      playBtn.addEventListener('click', () => {
+        solveSection.classList.add('visible');
+        playBtn.textContent = 'Solving…';
+        playBtn.disabled = true;
+        setTimeout(() => {
+          solveSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          letterBoxes[0].focus();
+        }, 300);
+      });
+
+      // Letter box navigation
+      letterBoxes.forEach((box, index) => {
+        box.addEventListener('input', (e) => {
+          const val = e.target.value.toUpperCase();
+          if (val && /[A-Z]/.test(val)) {
+            box.value = val;
+            box.classList.add('filled');
+            if (index < letterBoxes.length - 1) {
+              letterBoxes[index + 1].focus();
+            }
+            checkAnswer();
+          }
+        });
+
+        box.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !box.value && index > 0) {
+            letterBoxes[index - 1].focus();
+          }
+          if (e.key === 'ArrowLeft' && index > 0) {
+            letterBoxes[index - 1].focus();
+          }
+          if (e.key === 'ArrowRight' && index < letterBoxes.length - 1) {
+            letterBoxes[index + 1].focus();
+          }
+        });
+      });
+
+      useLetterBtn.addEventListener('click', () => {
+        const emptyIndices = [];
+        letterBoxes.forEach((box, idx) => {
+          if (!box.value && !revealedIndices.has(idx)) {
+            emptyIndices.push(idx);
+          }
+        });
+
+        if (emptyIndices.length > 0) {
+          const randomIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          const box = letterBoxes[randomIdx];
+          box.value = ANSWER[randomIdx];
+          box.classList.add('revealed');
+          box.disabled = true;
+          revealedIndices.add(randomIdx);
+          hintsUsed++;
+          
+          if (randomIdx < letterBoxes.length - 1) {
+            const nextEmpty = Array.from(letterBoxes).findIndex((b, i) => i > randomIdx && !b.value && !b.disabled);
+            if (nextEmpty !== -1) {
+              letterBoxes[nextEmpty].focus();
+            }
+          }
+          checkAnswer();
+        }
+      });
+
+      function checkAnswer() {
+        const userAnswer = Array.from(letterBoxes).map(b => b.value).join('').toUpperCase();
+        if (userAnswer === ANSWER) {
+          showReveal();
+        }
+      }
+
+      function showReveal() {
+        revealSection.classList.add('visible');
+        solveSection.classList.remove('visible');
+        if (usedReveal) {
+          hintsCountMsg.textContent = "You revealed the answer.";
+        } else {
+          hintsCountMsg.textContent = 'You used ' + hintsUsed + ' hint' + (hintsUsed === 1 ? '' : 's') + '.';
+        }
+      }
+
+      revealBtn.addEventListener('click', () => {
+        usedReveal = true;
+        letterBoxes.forEach((box, idx) => {
+          box.value = ANSWER[idx];
+          box.classList.add('revealed');
+        });
+        showReveal();
+      });
+
+      shareBtn.addEventListener('click', () => {
+        const shareText = `Minute Cryptic - \n"Admirer's vile ant confused, heads of north east" (9)\n🏋 ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'}`;
+        
+        navigator.clipboard.writeText(shareText).then(() => {
+          shareToast.classList.add('visible');
+          shareToast.textContent = 'Copied! Send it to them.';
+          setTimeout(() => shareToast.classList.remove('visible'), 3000);
+        }).catch(() => {
+          shareToast.textContent = shareText;
+          shareToast.classList.add('visible');
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPuzzle);
+    } else {
+      initPuzzle();
+    }
+  </script>
+</body>
+</html>
